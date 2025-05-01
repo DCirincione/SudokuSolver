@@ -2,42 +2,103 @@
 //13 April, 2025
 //CSC301 Program 3: Sudoku Solver
 
-//imports
+//imports for solver classes, GUI components, layout, and list handling
 import solver.*;
+import java.awt.BorderLayout;
+import javax.swing.*;
 import java.util.List;
 
-//main class
 public class Main {
     public static void main(String[] args) throws Exception {
-        //Load Puzzles
-        List<int[][]> puzzles = PuzzleLoader.loadPuzzles("puzzles/easy.txt");
-        int[][] puzzle = puzzles.get(0);
+        //load Cube Sudoku puzzles from file
+        List<CubeSudokuBoard> puzzles = PuzzleLoader.loadCubePuzzles("puzzles/hard.txt");
 
-        //Create GUI for BFS
-        SudokuGUI guiBFS = new SudokuGUI("BFS Solver", 200, 225);
-        guiBFS.loadInitialBoard(puzzle);
+        //check if any puzzles were loaded. if none, exit early
+        if (puzzles.isEmpty()) {
+            System.out.println("No puzzles found!");
+            return;
+        }
 
-        //Create GUI for DLS
-        SudokuGUI guiDLS = new SudokuGUI("DLS Solver", 750, 225);
-        guiDLS.loadInitialBoard(puzzle);
+        CubeSudokuBoard puzzle = puzzles.get(0); //load first puzzle from list
+        puzzle.markOriginalCells(); //mark original clues to distinguish from user/solver entries
 
-        //Give both GUIs time to load
-        Thread.sleep(1000);
+        //create and display main GUI frame for Cube Sudoku solver
+        JFrame frame = new JFrame("3D Cube Sudoku");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLayout(new BorderLayout());
 
-        //Run BFS Solver
-        SudokuBFS bfsSolver = new SudokuBFS(guiBFS);
-        long bfsStart = System.nanoTime();
-        List<int[][]> bfsSolutions = bfsSolver.solve(puzzle);
-        long bfsEnd = System.nanoTime();
-        System.out.println("BFS found " + bfsSolutions.size() + " solution(s).");
-        System.out.printf("BFS Time: %.2f ms%n", (bfsEnd - bfsStart) / 1_000_000.0);
+        CubeCanvas canvas = new CubeCanvas(puzzle); //visual component to display puzzle
+        frame.add(canvas, BorderLayout.CENTER);
 
-        //Run DLS Solver
-        SudokuDLS dlsSolver = new SudokuDLS(guiDLS);
-        long dlsStart = System.nanoTime();
-        List<int[][]> dlsSolutions = dlsSolver.solve(puzzle, 81); //depth limit of 81 (max)
-        long dlsEnd = System.nanoTime();
-        System.out.println("DLS found " + dlsSolutions.size() + " solution(s).");
-        System.out.printf("DLS Time: %.2f ms%n", (dlsEnd - dlsStart) / 1_000_000.0);
+        //panel to hold solver control buttons
+        JPanel buttonPanel = new JPanel();
+        JButton bfsButton = new JButton("Solve with BFS and DLS Hybrid"); //breadth-first search and dls solver button
+        JButton dlsButton = new JButton("Solve with DLS"); //depth-limited search solver button
+
+        //add buttons to chose search method
+        buttonPanel.add(bfsButton);
+        buttonPanel.add(dlsButton);
+        frame.add(buttonPanel, BorderLayout.SOUTH);
+
+        frame.pack();
+        frame.setLocationRelativeTo(null); //center on screen
+        frame.setVisible(true);
+
+        //attach BFS+DLS hybrid solver to Solve with BFS button. runs solver in a new thread to keep GUI responsive
+        bfsButton.addActionListener(e -> {
+            new Thread(() -> {
+                try {
+                    int bfsDepthLimit = 5;
+                    HybridSolver hybrid = new HybridSolver(puzzle, canvas, bfsDepthLimit);
+                    hybrid.solve();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }).start();
+        });
+
+        //attach DLS solver to Solve with DLS button. runs solver in a new thread to keep GUI responsive
+        dlsButton.addActionListener(e -> {
+            new Thread(() -> {
+                try {
+                    SudokuDLS dlsSolver = new SudokuDLS(canvas); //pass canvas to update GUI during solving
+                    List<CubeSudokuBoard> dlsSolutions = dlsSolver.solve(puzzle, 50000); //depth limit large
+                    if (!dlsSolutions.isEmpty()) {
+                        System.out.println("DLS solving complete.");
+                        CubeSudokuBoard solvedBoard = dlsSolutions.get(0);
+                        SudokuDLS validator = new SudokuDLS(null); //no canvas needed for validation only
+                        //validate solved board after DLS completion
+                        canvas.updateBoard(solvedBoard);
+                        canvas.repaint();
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }).start();
+        });
+    }
+    //helper method to copy board state from source to destination. deep copy of all faces and cells
+    private static void copyBoard(CubeSudokuBoard source, CubeSudokuBoard destination) {
+        for (int f = 0; f < 5; f++) {
+            for (int r = 0; r < 9; r++) {
+                for (int c = 0; c < 9; c++) {
+                    destination.setCell(f, r, c, source.getCell(f, r, c));
+                }
+            }
+        }
+    }
+
+    private static boolean boardsAreTooSimilar(CubeSudokuBoard original, CubeSudokuBoard updated) {
+        int diffCount = 0;
+        for (int f = 0; f < 5; f++) {
+            for (int r = 0; r < 9; r++) {
+                for (int c = 0; c < 9; c++) {
+                    if (original.getCell(f, r, c) != updated.getCell(f, r, c)) {
+                        diffCount++;
+                    }
+                }
+            }
+        }
+        return diffCount < 5; // fewer than 5 changes = not enough BFS progress
     }
 }

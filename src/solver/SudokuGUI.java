@@ -1,3 +1,6 @@
+//This file only contains the GUI for the old 2D model.
+//Go to CubeSudokuGUI for 3D GUI changes
+
 //imports
 package solver;
 import javax.swing.*;

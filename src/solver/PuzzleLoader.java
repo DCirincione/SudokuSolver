@@ -3,17 +3,39 @@ import java.io.*;
 import java.util.*;
 
 public class PuzzleLoader {
-    public static List<int[][]> loadPuzzles(String filename) throws IOException {
-        List<int[][]> puzzles = new ArrayList<>();
+
+    public static List<CubeSudokuBoard> loadCubePuzzles(String filename) throws IOException {
+        List<CubeSudokuBoard> puzzles = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                if (line.length() != 81) continue;
-                int[][] board = new int[9][9];
-                for (int i = 0; i < 81; i++) {
-                    board[i / 9][i % 9] = line.charAt(i) == '0' ? 0 : Character.getNumericValue(line.charAt(i));
+                if (!line.startsWith("Face 0:")) continue;
+
+                CubeSudokuBoard cube = new CubeSudokuBoard();
+                for (int face = 0; face < 5; face++) {
+                    // Read face label line (e.g., "Face 0:")
+                    if (face != 0) {
+                        line = reader.readLine();
+                        if (line == null || !line.startsWith("Face " + face + ":")) {
+                            throw new IOException("Unexpected format: Missing Face " + face);
+                        }
+                    }
+
+                    // Read 9 lines of numbers
+                    for (int row = 0; row < 9; row++) {
+                        line = reader.readLine();
+                        if (line == null || line.length() < 9) {
+                            throw new IOException("Unexpected format: Incomplete row at Face " + face);
+                        }
+                        String[] nums = line.trim().split("\\s+");
+                        for (int col = 0; col < 9; col++) {
+                            int val = Integer.parseInt(nums[col]);
+                            cube.setCell(face, row, col, val);
+                        }
+                    }
                 }
-                puzzles.add(board);
+
+                puzzles.add(cube);
             }
         }
         return puzzles;
