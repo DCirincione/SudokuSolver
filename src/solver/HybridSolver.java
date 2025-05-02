@@ -52,9 +52,26 @@ public class HybridSolver {
                 if (result != null && !result.isEmpty()) {
                     CubeSudokuBoard solvedBoard = result.get(0);
                     SwingUtilities.invokeLater(() -> {
-                        copyBoard(solvedBoard, board);
-                        canvas.updateBoard(solvedBoard);
-                        canvas.repaint();
+                        new Thread(() -> {
+                            for (int f = 0; f < 5; f++) {
+                                for (int r = 0; r < 9; r++) {
+                                    for (int c = 0; c < 9; c++) {
+                                        int num = solvedBoard.getCell(f, r, c);
+                                        if (board.getCell(f, r, c) == 0 && num != 0) {
+                                            board.setCell(f, r, c, num);
+                                            if (canvas != null) {
+                                                SwingUtilities.invokeLater(canvas::repaint);
+                                            }
+                                            try {
+                                                Thread.sleep(2, 500);
+                                            } catch (InterruptedException e) {
+                                                Thread.currentThread().interrupt();
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }).start();
                     });
                     System.out.println("Hybrid: BFS+DLS solved the puzzle.");
                     executor.shutdownNow(); // stop all remaining tasks
