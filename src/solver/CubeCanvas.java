@@ -2,6 +2,7 @@ package solver;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.Toolkit;
 
 public class CubeCanvas extends JPanel {
 
@@ -9,7 +10,8 @@ public class CubeCanvas extends JPanel {
 
     public CubeCanvas(CubeSudokuBoard board) {
         this.board = board;
-        setPreferredSize(new Dimension(800, 800));
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        setPreferredSize(new Dimension(screenSize.width, screenSize.height));
         setBackground(Color.WHITE);
     }
 

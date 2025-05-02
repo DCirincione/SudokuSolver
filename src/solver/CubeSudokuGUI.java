@@ -11,8 +11,6 @@ public class CubeSudokuGUI extends JFrame {
         setTitle("Cube Sudoku Solver");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
-        setSize(1200, 800);
-
         cells = new JLabel[5][9][9];
 
         JPanel mainPanel = new JPanel();
