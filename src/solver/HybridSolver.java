@@ -37,7 +37,26 @@ public class HybridSolver {
 
         // Pick the best board (most filled) and run DLS on it
         CubeSudokuBoard best = frontier.get(0);
-        copyBoard(best, board); // Apply best board to actual board for animation
+        // Animate step-by-step application of best board to actual board
+        for (int f = 0; f < 5; f++) {
+            for (int r = 0; r < 9; r++) {
+                for (int c = 0; c < 9; c++) {
+                    int from = best.getCell(f, r, c);
+                    int to = board.getCell(f, r, c);
+                    if (to == 0 && from != 0) {
+                        board.setCell(f, r, c, from);
+                        if (canvas != null) {
+                            canvas.repaint();
+                        }
+                        try {
+                            Thread.sleep(45); //adjust time for printing of BFS in hybrid search
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }
+                }
+            }
+        }
 
         // Directly run DLS on the displayed board, so animation occurs in-place
         System.out.println("Hybrid: Starting DLS on top frontier board...");

@@ -161,7 +161,7 @@ public class SudokuBFS {
                     //Update original board and repaint canvas for live effect
                     board.setCell(face, row, col, num);
                     canvas.repaint();
-                    Thread.sleep(20);
+                    Thread.sleep(25);
                 }
             }
         }
@@ -455,7 +455,8 @@ public class SudokuBFS {
 
     // Find the next empty cell index starting from 'start'
     private int findNextEmptyCellIndex(CubeSudokuBoard board, int start) {
-        for (int i = start; i < 81; i++) { //anything beyond 81 (first board) causes slowdown in hybrid search
+        //for loop controls depth of BFS search
+        for (int i = start; i < 100; i++) { //anything beyond 110 and it becomes unstable and gets hit with major bottleneck
             int[] frc = indexToFaceRowCol(i);
             if (board.getCell(frc[0], frc[1], frc[2]) == 0)
                 return i;
