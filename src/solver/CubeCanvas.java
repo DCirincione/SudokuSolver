@@ -26,8 +26,8 @@ public class CubeCanvas extends JPanel {
 
         int faceSize = 200; // size of one Sudoku face
         int cellSize = faceSize / 9;
-        int offsetX = 250;  // starting X offset
-        int offsetY = 100;  // starting Y offset
+        int offsetX = (getWidth() - 1 * faceSize) / 2;
+        int offsetY = (getHeight() - 3 * faceSize) / 2;
 
         drawFace(g2, 0, offsetX, offsetY, cellSize); // Top
         drawFace(g2, 1, offsetX, offsetY + faceSize, cellSize); // Front
