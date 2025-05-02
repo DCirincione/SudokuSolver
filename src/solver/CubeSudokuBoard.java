@@ -64,6 +64,16 @@ public class CubeSudokuBoard {
         return original[face][row][col];
     }
 
+    // Explicitly mark a cell as original
+    public void markOriginal(int face, int row, int col) {
+        original[face][row][col] = true;
+    }
+
+    // Explicitly unmark a cell as original
+    public void unmarkOriginal(int face, int row, int col) {
+        original[face][row][col] = false;
+    }
+
     // Copy the values from another CubeSudokuBoard into this one
     public void copyFrom(CubeSudokuBoard other) {
         for (int f = 0; f < 5; f++) {

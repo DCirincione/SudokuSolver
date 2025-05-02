@@ -98,6 +98,17 @@ public class CubeCanvas extends JPanel {
                 }
             }
         }
+        for (int f = 0; f < 5; f++) {
+            for (int r = 0; r < 9; r++) {
+                for (int c = 0; c < 9; c++) {
+                    if (newBoard.isOriginal(f, r, c)) {
+                        board.markOriginal(f, r, c);
+                    } else {
+                        board.unmarkOriginal(f, r, c);
+                    }
+                }
+            }
+        }
         repaint();
     }
 }
