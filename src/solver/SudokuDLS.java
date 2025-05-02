@@ -99,7 +99,7 @@ public class SudokuDLS {
                 if (canvas != null) {
                     canvas.repaint();
                     try {
-                        Thread.sleep(1, 500);
+                        Thread.sleep(15); //adjust this time for animation speed
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     }

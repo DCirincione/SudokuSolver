@@ -161,7 +161,7 @@ public class SudokuBFS {
                     //Update original board and repaint canvas for live effect
                     board.setCell(face, row, col, num);
                     canvas.repaint();
-                    Thread.sleep(0);
+                    Thread.sleep(20);
                 }
             }
         }
