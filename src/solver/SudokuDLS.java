@@ -99,7 +99,7 @@ public class SudokuDLS {
                 if (canvas != null) {
                     canvas.repaint();
                     try {
-                        Thread.sleep(0);
+                        Thread.sleep(1, 500);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     }
