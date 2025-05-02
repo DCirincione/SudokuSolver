@@ -18,7 +18,18 @@ public class CubeCanvas extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        drawCube(g);
+        Graphics2D g2d = (Graphics2D) g;
+
+        int width = getWidth();
+        int height = getHeight();
+
+        Color colorStart = new Color(240, 240, 240); // light grey
+        Color colorEnd = new Color(200, 200, 200);   // medium light grey
+        GradientPaint gradient = new GradientPaint(0, 0, colorStart, 0, height, colorEnd);
+        g2d.setPaint(gradient);
+        g2d.fillRect(0, 0, width, height);
+
+        drawCube(g2d);
     }
 
     private void drawCube(Graphics g) {
@@ -39,7 +50,12 @@ public class CubeCanvas extends JPanel {
     }
 
     private void drawFace(Graphics2D g2, int faceIndex, int startX, int startY, int cellSize) {
-        g2.setColor(Color.BLACK);
+        // Light background for the Sudoku face area
+        Color faceBackground = new Color(230, 230, 230); // subtle light gray
+        g2.setColor(faceBackground);
+        g2.fillRect(startX, startY, cellSize * 9, cellSize * 9);
+        g2.setColor(Color.BLACK); // reset color for drawing grid
+
         g2.drawRect(startX, startY, cellSize * 9, cellSize * 9);
 
         Font font = new Font("SansSerif", Font.BOLD, 12);

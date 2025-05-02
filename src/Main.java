@@ -22,10 +22,23 @@ public class Main {
         CubeSudokuBoard puzzle = puzzles.get(0); //load first puzzle from list
         puzzle.markOriginalCells(); //mark original clues to distinguish from user/solver entries
 
+        // create top panel for puzzle selection and reset
+        JPanel topPanel = new JPanel(new BorderLayout());
+        String[] difficulties = {"easy", "medium", "hard"};
+        JComboBox<String> difficultySelector = new JComboBox<>(difficulties);
+        JButton resetButton = new JButton("Reset");
+
+        topPanel.add(difficultySelector, BorderLayout.WEST);
+        topPanel.add(resetButton, BorderLayout.EAST);
+
+        CubeSudokuBoard originalPuzzle = puzzle.deepCopy();
+
         //create and display main GUI frame for Cube Sudoku solver
         JFrame frame = new JFrame("3D Cube Sudoku");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLayout(new BorderLayout());
+
+        frame.add(topPanel, BorderLayout.NORTH);
 
         CubeCanvas canvas = new CubeCanvas(puzzle); //visual component to display puzzle
         frame.add(canvas, BorderLayout.CENTER);
@@ -43,6 +56,31 @@ public class Main {
         frame.pack();
         frame.setLocationRelativeTo(null); //center on screen
         frame.setVisible(true);
+
+        resetButton.addActionListener(e -> {
+            CubeSudokuBoard resetCopy = originalPuzzle.deepCopy();
+            canvas.updateBoard(resetCopy);
+            canvas.repaint();
+        });
+
+        difficultySelector.addActionListener(e -> {
+            String selected = (String) difficultySelector.getSelectedItem();
+            try {
+                List<CubeSudokuBoard> newPuzzles = PuzzleLoader.loadCubePuzzles("puzzles/" + selected + ".txt");
+                if (!newPuzzles.isEmpty()) {
+                    CubeSudokuBoard newPuzzle = newPuzzles.get(0);
+                    newPuzzle.markOriginalCells();
+                    originalPuzzle.copyFrom(newPuzzle);
+                    canvas.updateBoard(newPuzzle.deepCopy());
+                    canvas.repaint();
+                } else {
+                    System.out.println("No puzzles found for: " + selected);
+                }
+            } catch (java.io.IOException ex) {
+                ex.printStackTrace();
+                System.out.println("Failed to load puzzle file: " + selected);
+            }
+        });
 
         //attach BFS+DLS hybrid solver to Solve with BFS button. runs solver in a new thread to keep GUI responsive
         bfsButton.addActionListener(e -> {
