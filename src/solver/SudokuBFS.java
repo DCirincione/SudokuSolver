@@ -1,4 +1,5 @@
 package solver;
+import solver.SudokuGraphNode;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
@@ -23,17 +24,22 @@ public class SudokuBFS {
 
     //Solve board using BFS with multithreading; returns list of solutions
     public List<CubeSudokuBoard> solve(CubeSudokuBoard board) {
-        //Thread-safe queue holding boards to explore
-        ConcurrentLinkedQueue<CubeSudokuBoard> queue = new ConcurrentLinkedQueue<>();
-        queue.add(board.deepCopy());
+        // Thread-safe queue holding graph nodes to explore
+        ConcurrentLinkedQueue<SudokuGraphNode> queue = new ConcurrentLinkedQueue<>();
+        SudokuGraphNode startNode = new SudokuGraphNode(board.deepCopy(), null, 0);
+        queue.add(startNode);
 
-        //Preprocessing: Apply forced moves (single option fill) before starting BFS
+        // Preprocessing: Apply forced moves (single option fill) before starting BFS
         CubeSudokuBoard preprocessed = board.deepCopy();
         applySingleOptionFill(preprocessed);
         queue.clear();
-        queue.add(preprocessed);
+        SudokuGraphNode preprocessedNode = new SudokuGraphNode(preprocessed, null, 0);
+        queue.add(preprocessedNode);
 
         final int MAX_QUEUE_SIZE = 5000; //Max queue size before pruning
+
+        // Visited set to avoid revisiting same board states
+        Set<String> visited = Collections.synchronizedSet(new HashSet<>());
 
         //Create thread pool with 8 workers to speed up BFS
         ExecutorService executor = Executors.newFixedThreadPool(8);
@@ -43,8 +49,9 @@ public class SudokuBFS {
         for (int i = 0; i < 4; i++) {
             executor.submit(() -> {
                 while (!queue.isEmpty() && !foundSolution.get()) {
-                    CubeSudokuBoard current = queue.poll();
-                    if (current == null) continue;
+                    SudokuGraphNode currentNode = queue.poll();
+                    if (currentNode == null) continue;
+                    CubeSudokuBoard current = currentNode.getBoard();
 
                     //Find next best empty cell with fewest legal options (MRV)
                     int[] emptyCell = findBestEmpty(current);
@@ -88,10 +95,22 @@ public class SudokuBFS {
                                     Thread.sleep(0);
                                 } catch (InterruptedException ignored) {}
                             }
-                            queue.add(next);
-                            //Prune queue if it grows too large to keep search manageable
-                            if (queue.size() > MAX_QUEUE_SIZE) {
-                                pruneQueue(queue);
+                            SudokuGraphNode childNode = new SudokuGraphNode(next, currentNode, currentNode.getDepth() + 1);
+                            String hash = childNode.getBoardHash();
+                            if (!visited.contains(hash)) {
+                                visited.add(hash);
+                                queue.add(childNode);
+                                //Prune queue if it grows too large to keep search manageable
+                                if (queue.size() > MAX_QUEUE_SIZE) {
+                                    // Pruning for SudokuGraphNode queue: extract boards, prune, rewrap
+                                    List<SudokuGraphNode> nodes = new ArrayList<>(queue);
+                                    nodes.sort(Comparator.comparingInt(nod -> countEmptyCells(nod.getBoard())));
+                                    int keepSize = (int)(nodes.size() * 0.6);
+                                    queue.clear();
+                                    for (int j = 0; j < keepSize; j++) {
+                                        queue.add(nodes.get(j));
+                                    }
+                                }
                             }
                         }
                     }

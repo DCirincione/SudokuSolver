@@ -1,3 +1,16 @@
+/**
+ * SudokuGraph represents the static constraint relationships between cells
+ * in a standard 9x9 Sudoku grid. It builds an adjacency list where each cell
+ * is connected to all other cells in the same row, column, and 3x3 subgrid.
+ *
+ * This structure is useful for checking Sudoku rules (e.g., avoiding duplicate
+ * numbers in related cells) and can support constraint propagation or validation
+ * logic during puzzle generation or solving.
+ *
+ * Note: This class does NOT represent transitions between full board states,
+ * and is not a graph in the traversal/search sense (e.g., for BFS or A* search).
+ */
+
 package solver;
 import java.util.*;
 
