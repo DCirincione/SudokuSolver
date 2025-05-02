@@ -51,28 +51,54 @@ public class HybridSolver {
                 List<CubeSudokuBoard> result = future.get();
                 if (result != null && !result.isEmpty()) {
                     CubeSudokuBoard solvedBoard = result.get(0);
-                    SwingUtilities.invokeLater(() -> {
-                        new Thread(() -> {
-                            for (int f = 0; f < 5; f++) {
-                                for (int r = 0; r < 9; r++) {
-                                    for (int c = 0; c < 9; c++) {
-                                        int num = solvedBoard.getCell(f, r, c);
-                                        if (board.getCell(f, r, c) == 0 && num != 0) {
-                                            board.setCell(f, r, c, num);
-                                            if (canvas != null) {
-                                                SwingUtilities.invokeLater(canvas::repaint);
-                                            }
-                                            try {
-                                                Thread.sleep(2, 500);
-                                            } catch (InterruptedException e) {
-                                                Thread.currentThread().interrupt();
-                                            }
-                                        }
+                    // Animate solution on main thread, step by step, in DLS top-down order
+                    // Top face first
+                    for (int r = 0; r < 9; r++) {
+                        for (int c = 0; c < 9; c++) {
+                            int num = solvedBoard.getCell(0, r, c);
+                            if (board.getCell(0, r, c) == 0 && num != 0) {
+                                board.setCell(0, r, c, num);
+                                if (canvas != null) canvas.repaint();
+                                try {
+                                    Thread.sleep(2, 500);
+                                } catch (InterruptedException e) {
+                                    Thread.currentThread().interrupt();
+                                }
+                            }
+                        }
+                    }
+                    // Side faces
+                    for (int r = 0; r < 9; r++) {
+                        for (int f = 1; f <= 3; f++) {
+                            for (int c = 0; c < 9; c++) {
+                                int num = solvedBoard.getCell(f, r, c);
+                                if (board.getCell(f, r, c) == 0 && num != 0) {
+                                    board.setCell(f, r, c, num);
+                                    if (canvas != null) canvas.repaint();
+                                    try {
+                                        Thread.sleep(2, 500);
+                                    } catch (InterruptedException e) {
+                                        Thread.currentThread().interrupt();
                                     }
                                 }
                             }
-                        }).start();
-                    });
+                        }
+                    }
+                    // Bottom face last
+                    for (int r = 0; r < 9; r++) {
+                        for (int c = 0; c < 9; c++) {
+                            int num = solvedBoard.getCell(4, r, c);
+                            if (board.getCell(4, r, c) == 0 && num != 0) {
+                                board.setCell(4, r, c, num);
+                                if (canvas != null) canvas.repaint();
+                                try {
+                                    Thread.sleep(2, 500);
+                                } catch (InterruptedException e) {
+                                    Thread.currentThread().interrupt();
+                                }
+                            }
+                        }
+                    }
                     System.out.println("Hybrid: BFS+DLS solved the puzzle.");
                     executor.shutdownNow(); // stop all remaining tasks
                     return;
