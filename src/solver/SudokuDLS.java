@@ -21,18 +21,18 @@ public class SudokuDLS {
         this.canvas = null;
     }
 
-    //Constructor allowing a CubeCanvas for visualization updates during solving
+    //constructor allowing a CubeCanvas for visualization updates during solving
     public SudokuDLS(CubeCanvas canvas) {
         this.canvas = canvas;
     }
 
-    //Solve Cube Sudoku board using DLS with constraint propagation
+    //solve Cube Sudoku board using DLS with constraint propagation
     public List<CubeSudokuBoard> solve(CubeSudokuBoard board, int maxDepth) {
         this.maxDepth = maxDepth;
         this.originalBoard = board.deepCopy();
         solutions.clear();
 
-        //Initialize domains for all empty cells: possible numbers that can be placed
+        //initialize domains for all empty cells: possible numbers that can be placed
         Map<String, Set<Integer>> domains = new HashMap<>();
         for (int f = 0; f < 5; f++) {
             for (int r = 0; r < 9; r++) {
@@ -50,22 +50,22 @@ public class SudokuDLS {
             }
         }
 
-        //Start depth-limited DFS with constraint propagation
+        //start depth-limited DFS with constraint propagation
         dfs(board, domains, 0);
         return solutions;
     }
 
     //Depth-limited search with forward checking (constraint propagation)
     private void dfs(CubeSudokuBoard board, Map<String, Set<Integer>> domains, int depth) {
-        //Cut off search if depth limit exceeded
+        //cut off search if depth limit exceeded
         if (depth > maxDepth) return;
-        //Stop if a solution has been found
+        //stop if a solution has been found
         if (!solutions.isEmpty()) return;
 
         String bestCell = null;
         int minOptions = Integer.MAX_VALUE;
 
-        //Select unassigned cell with fewest remaining values (MRV heuristic)
+        //select unassigned cell with fewest remaining values (MRV heuristic)
         for (Map.Entry<String, Set<Integer>> entry : domains.entrySet()) {
             int f = getFace(entry.getKey());
             int r = getRow(entry.getKey());
@@ -79,23 +79,23 @@ public class SudokuDLS {
             }
         }
 
-        //If no unassigned cells remain, solution found; add a deep copy to solutions
+        //if no unassigned cells remain, solution found; add a deep copy to solutions
         if (bestCell == null) {
             solutions.add(board.deepCopy());
             return;
         }
 
-        //Try each possible number for selected cell
+        //try each possible number for selected cell
         List<Integer> numbers = new ArrayList<>(domains.get(bestCell));
         for (int num : numbers) {
             int f = getFace(bestCell);
             int r = getRow(bestCell);
             int c = getCol(bestCell);
             if (isValid(board, f, r, c, num)) {
-                //Assign num to cell
+                //assign num to cell
                 board.setCell(f, r, c, num);
 
-                //If visualization is enabled, repaint canvas and briefly pause
+                //if visualization is enabled, repaint canvas and briefly pause
                 if (canvas != null) {
                     canvas.repaint();
                     try {
@@ -107,14 +107,14 @@ public class SudokuDLS {
 
                 //Deep copy domains before recursion to maintain state isolation
                 Map<String, Set<Integer>> newDomains = deepCopyDomains(domains);
-                //Remove assigned cell from domains
+                //remove assigned cell from domains
                 newDomains.remove(bestCell);
 
-                //Forward checking: propagate constraints to neighbors
+                //forward checking: propagate constraints to neighbors
                 for (String key : newDomains.keySet()) {
                     if (affects(bestCell, key)) {
                         newDomains.get(key).remove(num);
-                        //If any domain is emptied, backtrack early
+                        //if any domain is emptied, backtrack early
                         if (newDomains.get(key).isEmpty()) {
                             board.setCell(f, r, c, 0);
                             return; //backtrack early due to failure
@@ -122,18 +122,18 @@ public class SudokuDLS {
                     }
                 }
 
-                //Recurse deeper with updated board and domains
+                //recurse deeper with updated board and domains
                 dfs(board, newDomains, depth + 1);
-                //If solution found, stop searching
+                //if solution found, stop searching
                 if (!solutions.isEmpty()) return;
 
-                //Undo assignment (backtrack)
+                //undo assignment (backtrack)
                 board.setCell(f, r, c, 0);
             }
         }
     }
 
-    //Returns true if assignment at cell 'a' affects cell 'b' (same face and same row, col, or box)
+    //returns true if assignment at cell 'a' affects cell 'b' (same face and same row, col, or box)
     private boolean affects(String a, String b) {
         return getFace(a) == getFace(b) && (
                 getRow(a) == getRow(b) ||
@@ -142,15 +142,15 @@ public class SudokuDLS {
         );
     }
 
-    //Parse face index from key string "f,r,c"
+    //parse face index from key string "f,r,c"
     private int getFace(String key) {
         return Integer.parseInt(key.split(",")[0]);
     }
-    //Parse row index from key string "f,r,c"
+    //parse row index from key string "f,r,c"
     private int getRow(String key) {
         return Integer.parseInt(key.split(",")[1]);
     }
-    //Parse column index from key string "f,r,c"
+    //parse column index from key string "f,r,c"
     private int getCol(String key) {
         return Integer.parseInt(key.split(",")[2]);
     }
@@ -164,7 +164,7 @@ public class SudokuDLS {
         return copy;
     }
 
-    //Heuristic to find best empty cell: fewest options and highest degree (not used currently)
+    //heuristic to find best empty cell: fewest options and highest degree (not used currently)
     private int[] findBestEmpty(CubeSudokuBoard board) {
         int minOptions = Integer.MAX_VALUE;
         int maxDegree = -1;
@@ -207,7 +207,7 @@ public class SudokuDLS {
         return count;
     }
 
-    //Find any empty cell, used in simpler solving strategies (not currently used)
+    //find any empty cell, used in simpler solving strategies (not currently used)
     private int[] findEmpty(CubeSudokuBoard board) {
         for (int f = 0; f < 5; f++) {
             for (int r = 0; r < 9; r++) {
@@ -220,10 +220,10 @@ public class SudokuDLS {
         return null;
     }
 
-    //Check if placing num at (face,row,col) is valid considering Sudoku and cube constraints
+    //check if placing num at (face,row,col) is valid considering Sudoku and cube constraints
     private boolean isValid(CubeSudokuBoard board, int face, int row, int col, int num) {
         int index = row * 9 + col;
-        //Check all neighbors on same face to avoid duplicates
+        //check all neighbors on same face to avoid duplicates
         for (int neighbor : graph.getNeighbors(index)) {
             int r = neighbor / 9;
             int c = neighbor % 9;
@@ -257,7 +257,7 @@ public class SudokuDLS {
         }
 
         //Check cross-face corner overlaps (cube corner adjacency)
-        //Top Face corners
+        //top Face corners
         if (face == 0 && row == 8 && col == 0) { //Top left -> Left top + Middle top-left
             if (board.getCell(2, 0, 8) == num || board.getCell(1, 0, 0) == num) return false;
         }
@@ -265,7 +265,7 @@ public class SudokuDLS {
             if (board.getCell(3, 0, 0) == num || board.getCell(1, 0, 8) == num) return false;
         }
 
-        //Bottom Face corners
+        //bottom Face corners
         if (face == 4 && row == 0 && col == 0) { //Bottom left -> Left bottom + Middle bottom-left
             if (board.getCell(2, 8, 8) == num || board.getCell(1, 8, 0) == num) return false;
         }

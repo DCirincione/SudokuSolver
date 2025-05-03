@@ -1,8 +1,10 @@
+//generates sudoku puzzles of different difficulties
 package solver;
 
 import java.io.*;
 import java.util.*;
 
+//main class for sudoku generation logic
 public class PuzzleGenerator {
     public static void main(String[] args) throws IOException {
         generateAndSavePuzzles("puzzles/easy.txt", 5, 35);
@@ -25,10 +27,13 @@ public class PuzzleGenerator {
 
     //Board Generation
 
+    //fills a board with a valid complete sudoku solution
     private static int[][] generateFullBoard() {
         int[][] board = new int[9][9];
+        //initialize empty 9x9 board
         fillDiagonalBoxes(board);
         solveBoard(board);
+        //return completed board
         return board;
     }
 
@@ -51,7 +56,7 @@ public class PuzzleGenerator {
         }
     }
 
-    //Backtracking solver to fill remaining cells
+    //recursive backtracking function to fill board
     private static boolean solveBoard(int[][] board) {
         for (int row = 0; row < 9; row++) {
             for (int col = 0; col < 9; col++) {
@@ -74,6 +79,7 @@ public class PuzzleGenerator {
         return true; //board is filled
     }
 
+    //checks if placing a number follows sudoku rules
     private static boolean isSafe(int[][] board, int row, int col, int num) {
         return !inRow(board, row, num) &&
                 !inCol(board, col, num) &&
@@ -101,16 +107,17 @@ public class PuzzleGenerator {
 
     //Helpers
 
+    //removes cells randomly from board to create a puzzle
     private static void removeCells(int[][] board, int count) {
-        Random rand = new Random();
-        int removed = 0;
+        Random rand = new Random(); //random number generator
+        int removed = 0; //count of removed cells
 
         while (removed < count) {
-            int row = rand.nextInt(9);
-            int col = rand.nextInt(9);
-            if (board[row][col] != 0) {
-                board[row][col] = 0;
-                removed++;
+            int row = rand.nextInt(9); //pick random row
+            int col = rand.nextInt(9); //pick random column
+            if (board[row][col] != 0) { //if cell is not already empty
+                board[row][col] = 0; //remove number from cell
+                removed++; //increment removed counter
             }
         }
     }

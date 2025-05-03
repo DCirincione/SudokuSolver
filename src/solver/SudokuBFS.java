@@ -10,11 +10,11 @@ import solver.CubeCanvas;
 import solver.CubeSudokuGUI;
 
 public class SudokuBFS {
-    //Graph representing adjacency of cells within a face for constraint checks
+    //graph representing adjacency of cells within a face for constraint checks
     private final SudokuGraph graph = new SudokuGraph();
-    //List to store found solutions (usually one or few)
+    //list to store found solutions (usually one or few)
     private final List<CubeSudokuBoard> solutions = new ArrayList<>();
-    //Optional GUI for live updates during solving
+    //optional GUI for live updates during solving
     private final CubeSudokuGUI gui;
 
     //now default constructor; gui is optional and may be null
@@ -22,14 +22,14 @@ public class SudokuBFS {
         this.gui = null;
     }
 
-    //Solve board using BFS with multithreading; returns list of solutions
+    //solve board using BFS with multithreading; returns list of solutions
     public List<CubeSudokuBoard> solve(CubeSudokuBoard board) {
-        // Thread-safe queue holding graph nodes to explore
+        //Thread-safe queue holding graph nodes to explore
         ConcurrentLinkedQueue<SudokuGraphNode> queue = new ConcurrentLinkedQueue<>();
         SudokuGraphNode startNode = new SudokuGraphNode(board.deepCopy(), null, 0);
         queue.add(startNode);
 
-        // Preprocessing: Apply forced moves (single option fill) before starting BFS
+        //preprocessing: Apply forced moves (single option fill) before starting BFS
         CubeSudokuBoard preprocessed = board.deepCopy();
         applySingleOptionFill(preprocessed);
         queue.clear();
@@ -38,14 +38,14 @@ public class SudokuBFS {
 
         final int MAX_QUEUE_SIZE = 5000; //Max queue size before pruning
 
-        // Visited set to avoid revisiting same board states
+        //visited set to avoid revisiting same board states
         Set<String> visited = Collections.synchronizedSet(new HashSet<>());
 
-        //Create thread pool with 8 workers to speed up BFS
+        //create thread pool with 8 workers to speed up BFS
         ExecutorService executor = Executors.newFixedThreadPool(8);
         AtomicBoolean foundSolution = new AtomicBoolean(false); //Flag to stop when solution found
 
-        //Main BFS solving loop using multithreaded workers
+        //main BFS solving loop using multithreaded workers
         for (int i = 0; i < 4; i++) {
             executor.submit(() -> {
                 while (!queue.isEmpty() && !foundSolution.get()) {
@@ -53,10 +53,10 @@ public class SudokuBFS {
                     if (currentNode == null) continue;
                     CubeSudokuBoard current = currentNode.getBoard();
 
-                    //Find next best empty cell with fewest legal options (MRV)
+                    //find next best empty cell with fewest legal options (MRV)
                     int[] emptyCell = findBestEmpty(current);
                     if (emptyCell == null) {
-                        //No empty cells means solution found; add to solutions list
+                        //no empty cells means solution found; add to solutions list
                         synchronized (solutions) {
                             solutions.add(current.deepCopy());
                             foundSolution.set(true);
@@ -68,25 +68,25 @@ public class SudokuBFS {
                     int row = emptyCell[1];
                     int col = emptyCell[2];
 
-                    //Collect all valid candidate numbers for this cell
+                    //collect all valid candidate numbers for this cell
                     List<Integer> candidates = new ArrayList<>();
                     for (int num = 1; num <= 9; num++) {
                         if (isValid(current, face, row, col, num)) {
                             candidates.add(num);
                         }
                     }
-                    //Sort candidates by how many conflicts they cause (least conflicts first)
+                    //sort candidates by how many conflicts they cause (least conflicts first)
                     candidates.sort(Comparator.comparingInt(n -> countConstraints(current, face, row, col, n)));
 
-                    //Try each candidate number and enqueue resulting board if valid
+                    //try each candidate number and enqueue resulting board if valid
                     for (int num : candidates) {
                         CubeSudokuBoard next = current.deepCopy();
                         next.setCell(face, row, col, num);
 
-                        //Apply forced moves after setting cell
+                        //apply forced moves after setting cell
                         applySingleOptionFill(next);
 
-                        //Only add next board if it still has valid domains (no dead ends)
+                        //only add next board if it still has valid domains (no dead ends)
                         if (hasValidDomains(next)) {
                             if (gui != null) {
                                 //Update GUI with this move (non-blocking)
@@ -102,7 +102,7 @@ public class SudokuBFS {
                                 queue.add(childNode);
                                 //Prune queue if it grows too large to keep search manageable
                                 if (queue.size() > MAX_QUEUE_SIZE) {
-                                    // Pruning for SudokuGraphNode queue: extract boards, prune, rewrap
+                                    //Pruning for SudokuGraphNode queue: extract boards, prune, rewrap
                                     List<SudokuGraphNode> nodes = new ArrayList<>(queue);
                                     nodes.sort(Comparator.comparingInt(nod -> countEmptyCells(nod.getBoard())));
                                     int keepSize = (int)(nodes.size() * 0.6);
@@ -118,7 +118,7 @@ public class SudokuBFS {
             });
         }
 
-        //Shutdown executor and wait for all threads to finish
+        //shutdown executor and wait for all threads to finish
         executor.shutdown();
         while (!executor.isTerminated()) {
             try {
@@ -129,17 +129,17 @@ public class SudokuBFS {
         return solutions;
     }
 
-    //Visual BFS solver for live GUI step-by-step visualization; slower but interactive
+    //visual BFS solver for live GUI step-by-step visualization; slower but interactive
     public List<CubeSudokuBoard> solveLive(CubeSudokuBoard board, CubeCanvas canvas) throws InterruptedException {
         List<CubeSudokuBoard> liveSolutions = new ArrayList<>();
         Queue<CubeSudokuBoard> queue = new LinkedList<>();
         queue.add(board.deepCopy());
 
-        //Simple BFS loop for live visualization
+        //simple BFS loop for live visualization
         while (!queue.isEmpty()) {
             CubeSudokuBoard current = queue.poll();
 
-            //Find first empty cell (no MRV heuristic here)
+            //find first empty cell (no MRV heuristic here)
             int[] emptyCell = findEmpty(current);
             if (emptyCell == null) {
                 //Solution found, add and stop
@@ -151,14 +151,14 @@ public class SudokuBFS {
             int row = emptyCell[1];
             int col = emptyCell[2];
 
-            //Try all candidates for this cell
+            //try all candidates for this cell
             for (int num = 1; num <= 9; num++) {
                 if (isValid(current, face, row, col, num)) {
                     CubeSudokuBoard nextBoard = current.deepCopy();
                     nextBoard.setCell(face, row, col, num);
                     queue.add(nextBoard);
 
-                    //Update original board and repaint canvas for live effect
+                    //update original board and repaint canvas for live effect
                     board.setCell(face, row, col, num);
                     canvas.repaint();
                     Thread.sleep(25);
@@ -169,7 +169,7 @@ public class SudokuBFS {
         return liveSolutions;
     }
 
-    //Finds first empty cell (0); returns [face, row, col] or null if full
+    //finds first empty cell (0); returns [face, row, col] or null if full
     private int[] findEmpty(CubeSudokuBoard board) {
         for (int f = 0; f < 5; f++) {
             for (int r = 0; r < 9; r++) {
@@ -182,7 +182,7 @@ public class SudokuBFS {
         return null;
     }
 
-    //Find next best empty cell with fewest legal options (MRV heuristic)
+    //find next best empty cell with fewest legal options (MRV heuristic)
     private int[] findBestEmpty(CubeSudokuBoard board) {
         int[] best = null;
         int minOptions = Integer.MAX_VALUE;
@@ -207,7 +207,7 @@ public class SudokuBFS {
         return best;
     }
 
-    //Check if all empty cells have valid domains; prune if any cell is unsolvable or too constrained
+    //check if all empty cells have valid domains; prune if any cell is unsolvable or too constrained
     private boolean hasValidDomains(CubeSudokuBoard board) {
         for (int f = 0; f < 5; f++) {
             for (int r = 0; r < 9; r++) {
@@ -220,7 +220,7 @@ public class SudokuBFS {
                                 if (options > 1) break; //early exit if more than 1 option
                             }
                         }
-                        if (options == 0) return false; // unsolvable spot
+                        if (options == 0) return false; //unsolvable spot
                     }
                 }
             }
@@ -228,10 +228,10 @@ public class SudokuBFS {
         return true;
     }
 
-    //Uses graph to check if placing 'num' at (face, row, col) is valid considering neighbors and cross-face edges
+    //uses graph to check if placing 'num' at (face, row, col) is valid considering neighbors and cross-face edges
     private boolean isValid(CubeSudokuBoard board, int face, int row, int col, int num) {
         int index = row * 9 + col;
-        //Check neighbors within same face for conflicts
+        //check neighbors within same face for conflicts
         for (int neighbor : graph.getNeighbors(index)) {
             int r = neighbor / 9;
             int c = neighbor % 9;
@@ -266,7 +266,7 @@ public class SudokuBFS {
         return true;
     }
 
-    //Count how many conflicts placing 'num' at (face, row, col) would cause in other empty cells
+    //count how many conflicts placing 'num' at (face, row, col) would cause in other empty cells
     private int countConstraints(CubeSudokuBoard board, int face, int row, int col, int num) {
         int conflicts = 0;
         for (int f = 0; f < 5; f++) {
@@ -286,9 +286,9 @@ public class SudokuBFS {
     //Prune queue to keep only most promising boards (fewest empty cells)
     private void pruneQueue(ConcurrentLinkedQueue<CubeSudokuBoard> queue) {
         List<CubeSudokuBoard> boards = new ArrayList<>(queue);
-        //Sort boards by number of empty cells (ascending)
+        //cort boards by number of empty cells (ascending)
         boards.sort(Comparator.comparingInt(this::countEmptyCells));
-        //Keep only most promising 60% boards
+        //ceep only most promising 60% boards
         int keepSize = (int)(boards.size() * 0.6);
         queue.clear();
         for (int i = 0; i < keepSize; i++) {
@@ -296,7 +296,7 @@ public class SudokuBFS {
         }
     }
 
-    //Count how many empty cells a board has
+    //count how many empty cells a board has
     private int countEmptyCells(CubeSudokuBoard board) {
         int count = 0;
         for (int f = 0; f < 5; f++) {
@@ -309,7 +309,7 @@ public class SudokuBFS {
         return count;
     }
 
-    //Apply forced moves: fill cells that have only one valid option (one pass, non-recursive)
+    //apply forced moves: fill cells that have only one valid option (one pass, non-recursive)
     private void applySingleOptionFill(CubeSudokuBoard board) {
         for (int f = 0; f < 5; f++) {
             for (int r = 0; r < 9; r++) {
@@ -329,7 +329,7 @@ public class SudokuBFS {
             }
         }
     }
-    // Adaptive BFS for hybrid solving: explores until queue is empty or progress stalls, focusing on at least the first face.
+    //adaptive BFS for hybrid solving: explores until queue is empty or progress stalls, focusing on at least first face.
     public List<CubeSudokuBoard> solveAdaptive(CubeSudokuBoard startBoard, CubeCanvas canvas, CubeSudokuGUI gui) {
         List<CubeSudokuBoard> frontierBoards = new ArrayList<>();
         Queue<BFSNode> queue = new LinkedList<>();
@@ -371,23 +371,23 @@ public class SudokuBFS {
 
                     int filled = countFilledCells(next);
                     int face0Filled = countFaceFilledCells(next, 0);
-                    // REPLACED progress-block: new logic for stagnation/pruning
+                    //new logic for stagnation/pruning
                     if (face0Filled > bestFace0Filled) {
                         bestFace0Filled = face0Filled;
                         node.lastFace0ProgressDepth = node.depth;
                     } else if (node.depth - node.lastFace0ProgressDepth > 4 && queue.size() > 100) {
-                        // Allow deeper search if queue is small, else skip stagnating paths
+                        //allow deeper search if queue is small, else skip stagnating paths
                         continue;
                     }
 
                     if (filled > bestFilled) bestFilled = filled;
 
                     int nextIndex = findNextEmptyCellIndex(next, node.cellIndex + 1);
-                    // MODIFIED: Always add boards that reach depth 6 or more as frontier candidates
+                    //always add boards that reach depth 6 or more as frontier candidates
                     if (nextIndex != -1) {
                         queue.add(new BFSNode(next, nextIndex, node.depth + 1, node.lastFace0ProgressDepth));
                     }
-                    // Keep all boards that reach depth 6 or more as frontier candidates
+                    //keep all boards that reach depth 6 or more as frontier candidates
                     if (node.depth >= 6 || nextIndex == -1) {
                         System.out.println("BFS: Added frontier board with " + countFilledCells(next) + " filled cells.");
                         frontierBoards.add(next);
@@ -409,11 +409,6 @@ public class SudokuBFS {
             if (!progressMade && queue.isEmpty()) {
                 break;
             }
-            // REMOVED: early stopping due to queue size
-            // if (queue.size() > 30000) {
-            //     System.out.println("Queue too large. Stopping BFS early.");
-            //     break;
-            // }
         }
 
         if (frontierBoards.isEmpty()) {
@@ -423,7 +418,7 @@ public class SudokuBFS {
         return frontierBoards;
     }
 
-    // Helper class for BFS node state
+    //helper class for BFS node state
     private static class BFSNode {
         CubeSudokuBoard board;
         int cellIndex;
@@ -444,7 +439,7 @@ public class SudokuBFS {
         }
     }
 
-    // Convert 0–404 index to (face, row, col)
+    //convert 0–404 index to (face, row, col)
     private int[] indexToFaceRowCol(int index) {
         int face = index / 81;
         int offset = index % 81;
@@ -453,18 +448,22 @@ public class SudokuBFS {
         return new int[]{face, row, col};
     }
 
-    // Find the next empty cell index starting from 'start'
+    //find next empty cell index starting from 'start'
     private int findNextEmptyCellIndex(CubeSudokuBoard board, int start) {
+        //look for next empty cell starting from given linear index
         //for loop controls depth of BFS search
         for (int i = start; i < 100; i++) { //anything beyond 110 and it becomes unstable and gets hit with major bottleneck
             int[] frc = indexToFaceRowCol(i);
-            if (board.getCell(frc[0], frc[1], frc[2]) == 0)
+            if (board.getCell(frc[0], frc[1], frc[2]) == 0) {
+                //return index of first empty cell found
                 return i;
+            }
         }
+        //return -1 if no empty cell is found
         return -1;
     }
 
-    // Helper to copy a board's cell values into another board
+    //helper to copy a board's cell values into another board
     private void copyBoard(CubeSudokuBoard source, CubeSudokuBoard dest) {
         for (int f = 0; f < 5; f++) {
             for (int r = 0; r < 9; r++) {
@@ -475,7 +474,7 @@ public class SudokuBFS {
         }
     }
 
-    // Helper to count filled cells (for sorting promising boards)
+    //helper to count filled cells (for sorting promising boards)
     public int countFilledCells(CubeSudokuBoard board) {
         int count = 0;
         for (int f = 0; f < 5; f++) {
@@ -488,7 +487,7 @@ public class SudokuBFS {
         return count;
     }
 
-    // Helper to count filled cells on a specific face
+    //helper to count filled cells on a specific face
     private int countFaceFilledCells(CubeSudokuBoard board, int face) {
         int count = 0;
         for (int r = 0; r < 9; r++) {

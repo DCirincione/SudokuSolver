@@ -31,14 +31,14 @@ public class SudokuGraphNode {
     }
 
     public String getBoardHash() {
-        StringBuilder sb = new StringBuilder();
-        for (int f = 0; f < 5; f++) {
-            for (int r = 0; r < 9; r++) {
-                for (int c = 0; c < 9; c++) {
-                    sb.append(board.getCell(f, r, c));
+        StringBuilder sb = new StringBuilder(); //create a string builder to store board state
+        for (int f = 0; f < 5; f++) { //loop through each face
+            for (int r = 0; r < 9; r++) { //loop through each row
+                for (int c = 0; c < 9; c++) { //loop through each column
+                    sb.append(board.getCell(f, r, c)); //append value at this cell to string builder
                 }
             }
         }
-        return sb.toString();
+        return sb.toString(); //return full board hash as a string
     }
 }

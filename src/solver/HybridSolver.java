@@ -6,10 +6,15 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class HybridSolver {
+    //CubeSudoku puzzle board to be solved
     private final CubeSudokuBoard board;
+    //Canvas object for rendering board updates (used for animation)
     private final CubeCanvas canvas;
+    //BFS maximum search depth for partial solution generation
     private final int bfsDepth;
+    //BFS solver for generating partially filled boards
     private final SudokuBFS bfsSolver;
+    //DLS solver for completing board from a partial state
     private final SudokuDLS dlsSolver;
 
     public HybridSolver(CubeSudokuBoard board, CubeCanvas canvas, int bfsDepth) {
@@ -22,22 +27,23 @@ public class HybridSolver {
 
     public void solve() {
         System.out.println("Hybrid: Running adaptive BFS...");
+        //run adaptive BFS to generate list of partially completed boards
         List<CubeSudokuBoard> frontier = bfsSolver.solveAdaptive(
             board.deepCopy(), canvas, null
         );
 
+        //abort if no useful partial solutions found
         if (frontier == null || frontier.isEmpty()) {
             System.out.println("Hybrid: No frontier generated. Aborting hybrid search.");
             return;
         }
         System.out.println("Hybrid: BFS generated " + frontier.size() + " partial boards.");
 
-        // Sort frontier boards by most filled (descending)
+        //sort frontier by number of filled cells (descending order)
         frontier.sort((a, b) -> Integer.compare(countFilled(b), countFilled(a)));
 
-        // Pick the best board (most filled) and run DLS on it
+        //animate transition from original board to best partial board
         CubeSudokuBoard best = frontier.get(0);
-        // Animate step-by-step application of best board to actual board
         for (int f = 0; f < 5; f++) {
             for (int r = 0; r < 9; r++) {
                 for (int c = 0; c < 9; c++) {
@@ -58,13 +64,14 @@ public class HybridSolver {
             }
         }
 
-        // Directly run DLS on the displayed board, so animation occurs in-place
+        //start DLS from best frontier board to complete puzzle
         System.out.println("Hybrid: Starting DLS on top frontier board...");
-        dlsSolver.solve(board, 500000); // internally animates on board
+        dlsSolver.solve(board, 500000); //internally animates on board
         System.out.println("Hybrid: BFS+DLS finished solving.");
         return;
     }
 
+    //helper method to count number of filled cells in a board
     private int countFilled(CubeSudokuBoard b) {
         int count = 0;
         for (int f = 0; f < 5; f++)
@@ -72,12 +79,5 @@ public class HybridSolver {
                 for (int c = 0; c < 9; c++)
                     if (b.getCell(f, r, c) != 0) count++;
         return count;
-    }
-
-    private void copyBoard(CubeSudokuBoard src, CubeSudokuBoard dst) {
-        for (int f = 0; f < 5; f++)
-            for (int r = 0; r < 9; r++)
-                for (int c = 0; c < 9; c++)
-                    dst.setCell(f, r, c, src.getCell(f, r, c));
     }
 }
